@@ -1,0 +1,50 @@
+platform:
+  - x86
+
+configuration:
+  - Release
+
+environment:
+  BUILD_PASSWORD:
+    secure: 1R+NBu9p3KStaLaxGoc9xw==
+  RUST_INSTALL_DIR: C:\Rust
+  matrix:
+#    - RUST_INSTALL_TRIPLE: i686-pc-windows-gnu
+#      RUST_VERSION: nightly
+    - RUST_INSTALL_TRIPLE: i686-pc-windows-gnu
+      RUST_VERSION: 1.0.0-beta
+
+install:
+  - ps: Start-FileDownload "https://static.rust-lang.org/dist/rust-$Env:RUST_VERSION-$Env:RUST_INSTALL_TRIPLE.exe"
+  - cmd: rust-%RUST_VERSION%-%RUST_INSTALL_TRIPLE%.exe /VERYSILENT /NORESTART /COMPONENTS="rust,gcc,cargo" /DIR="%RUST_INSTALL_DIR%"
+  - cmd: SET PATH=%PATH%;%RUST_INSTALL_DIR%\bin
+  - rustc --version
+  - cargo --version
+
+build_script:
+  - PATH %PATH%;C:\MinGW\bin;
+  - cargo build --release
+
+after_build:
+  - ps: >
+        if (!"$env:APPVEYOR_PULL_REQUEST_TITLE" -and ("$env:APPVEYOR_REPO_BRANCH" -eq "master"))
+          {
+            $GITDATE = $(git show -s --date=short --format='%ad') -replace "-",""
+            $GITREV = $(git show -s --format='%h')
+            # Where are these spaces coming from? Regardless, let's remove them
+            $BUILD_NAME = "citra-${GITDATE}-${GITREV}-windows.7z" -replace " ",""
+            # Zip up the build folder
+            7z a $BUILD_NAME .\target\release\xorer.exe
+            
+            # Download winscp
+            Invoke-WebRequest "http://hivelocity.dl.sourceforge.net/project/winscp/WinSCP/5.7/winscp570.zip" -OutFile "winscp570.zip"
+            7z e -y winscp570.zip
+            
+            # Upload to server
+            .\WinSCP.com /command `
+                "option batch abort" `
+                "option confirm off" `
+                "open sftp://builds:${env:BUILD_PASSWORD}@builds.archshift.com -hostkey=*" `
+                "put $BUILD_NAME /xorer/nightly/windows/" `
+                "exit"
+          }

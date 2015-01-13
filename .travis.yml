@@ -1,0 +1,16 @@
+language: rust
+
+rust:
+ - 1.0.0-beta
+
+sudo: true
+
+script:
+ - cargo build --release --verbose 
+
+env:
+  global:
+    secure: "EGPIwMAi/OJmmJyfJgEIaQLNEb4+HzsNcf1s0mSudSarAbwloc/5W29V+iQi4/GZUFky/IA/C/xdzlbeSsOuSxEkHu0QxYX2x5xXdbkD+jlX/YW5nUBDgGUGH3U2U5YowEuZLJdVRkDnalUFHOMsDHOGT+FfxX4RhcQ6B//ml2A="
+
+after_success:
+ - sh .travis-upload.sh
