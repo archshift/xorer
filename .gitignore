@@ -1,0 +1,8 @@
+build/
+.idea/
+
+*.o
+xorer
+
+.DS_Store
+
