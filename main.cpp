@@ -30,7 +30,12 @@ bool CXIDecryptExheader(u8* file_buf, const std::vector<u8>& xorpad)
         return false;
     }
 
-    XOR(file_buf + NCCH::OFFSET_EXHEADER, &xorpad[0], 0x800);
+    u8* exheader = file_buf + NCCH::OFFSET_EXHEADER;
+    XOR(exheader, &xorpad[0], 0x800);
+    if (!CompareHash(exheader, 0x400, file_buf + NCCH::OFFSET_EXHEADER_HASH)) {
+        printf("ERROR: Exheader XORPad invalid!");
+        return false;
+    }
     return true;
 }
 
