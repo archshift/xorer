@@ -3,6 +3,8 @@
 #include <cstdlib>
 #include <vector>
 
+#include "polarssl/sha256.h"
+
 #include "ncch_header.h"
 #include "file_io.h"
 #include "common_types.h"
@@ -14,34 +16,56 @@ void XOR(u8* target_buf, const u8* xorpad, const size_t size)
     }
 }
 
-void DecryptCXI(u8* app_file_buf, const u8* exhead_xorpad, const u8* exefs_xorpad)
+bool CompareHash(const u8* data_buf, const size_t data_size, const u8* hash_buf)
 {
-    size_t exhead_size  = *reinterpret_cast<u32*>(app_file_buf + NCCH_OFFSET_EXHEADER_SIZE);
-    XOR(app_file_buf + NCCH_OFFSET_EXHEADER, exhead_xorpad, exhead_size);
-
-    size_t exefs_offset = *reinterpret_cast<u32*>(app_file_buf + NCCH_OFFSET_EXEFS_OFFSET) * 0x200;
-    size_t exefs_size   = *reinterpret_cast<u32*>(app_file_buf + NCCH_OFFSET_EXEFS_SIZE)   * 0x200;
-    XOR(app_file_buf + exefs_offset, exefs_xorpad, exefs_size);
-
-    app_file_buf[NCCH_OFFSET_FLAG_CRYPTO] = 0;
-    app_file_buf[NCCH_OFFSET_FLAG_DATA_FORMAT] |= FLAG_NOCRYPTO;
+    std::unique_ptr<u8> generated_hash(new u8[32]);
+    sha256(data_buf, data_size, generated_hash.get(), 0);
+    return memcmp(generated_hash.get(), hash_buf, 32) == 0;
 }
 
-void DecryptCXI(u8* app_file_buf, const u8* exhead_xorpad, const u8* exefs_xorpad, const u8* romfs_xorpad)
+bool CXIDecryptExheader(u8* file_buf, const std::vector<u8>& xorpad)
 {
-    size_t exhead_size  = *reinterpret_cast<u32*>(app_file_buf + NCCH_OFFSET_EXHEADER_SIZE);
-    XOR(app_file_buf + NCCH_OFFSET_EXHEADER, exhead_xorpad, exhead_size);
+    if (xorpad.empty()) {
+        printf("ERROR: Input exheader XORPad does not exist!\n");
+        return false;
+    }
 
-    size_t exefs_offset = *reinterpret_cast<u32*>(app_file_buf + NCCH_OFFSET_EXEFS_OFFSET) * 0x200;
-    size_t exefs_size   = *reinterpret_cast<u32*>(app_file_buf + NCCH_OFFSET_EXEFS_SIZE)   * 0x200;
-    XOR(app_file_buf + exefs_offset, exefs_xorpad, exefs_size);
+    XOR(file_buf + NCCH::OFFSET_EXHEADER, &xorpad[0], 0x800);
+    return true;
+}
 
-    size_t romfs_offset = *reinterpret_cast<u32*>(app_file_buf + NCCH_OFFSET_ROMFS_OFFSET) * 0x200;
-    size_t romfs_size   = *reinterpret_cast<u32*>(app_file_buf + NCCH_OFFSET_ROMFS_SIZE)   * 0x200;
-    XOR(app_file_buf + romfs_offset, romfs_xorpad, romfs_size);
+bool CXIDecryptEXEFS(u8* file_buf, const std::vector<u8>& xorpad)
+{
+    if (xorpad.empty()) {
+        printf("ERROR: Input EXEFS XORPad does not exist!\n");
+        return false;
+    }
 
-    app_file_buf[NCCH_OFFSET_FLAG_CRYPTO] = 0;
-    app_file_buf[NCCH_OFFSET_FLAG_DATA_FORMAT] |= FLAG_NOCRYPTO;
+    u8* exefs = file_buf + NCCH::GetExefsOffset(file_buf);
+    XOR(exefs, &xorpad[0], NCCH::GetExefsSize(file_buf));
+
+    if (!CompareHash(exefs, NCCH::GetExefsHashSize(file_buf), file_buf + NCCH::OFFSET_EXEFS_HASH)) {
+        printf("ERROR: EXEFS XORPad invalid!");
+        return false;
+    }
+    return true;
+}
+
+bool CXIDecryptROMFS(u8* file_buf, const std::vector<u8>& xorpad)
+{
+    if (xorpad.empty()) {
+        printf("ERROR: Input ROMFS XORPad does not exist!\n");
+        return false;
+    }
+
+    u8* romfs = file_buf + NCCH::GetRomfsOffset(file_buf);
+    XOR(romfs, &xorpad[0], NCCH::GetRomfsSize(file_buf));
+
+    if (!CompareHash(romfs, NCCH::GetRomfsHashSize(file_buf), file_buf + NCCH::OFFSET_ROMFS_HASH)) {
+        printf("ERROR: ROMFS XORPad invalid!");
+        return false;
+    }
+    return true;
 }
 
 int main(int argc, char** argv)
@@ -57,11 +81,11 @@ int main(int argc, char** argv)
         return -1;
     }
 
-    bool confirm_magic = memcmp(&app_file[NCCH_OFFSET_MAGIC], "NCCH", 4) == 0;
+    bool confirm_magic = memcmp(&app_file[NCCH::OFFSET_MAGIC], "NCCH", 4) == 0;
     printf("Magic confirmed: %s\n", confirm_magic ? "true" : "false");
 
-    u8 data_format_flag = app_file[NCCH_OFFSET_FLAG_DATA_FORMAT];
-    if ((data_format_flag & FLAG_DATA) && !(data_format_flag & FLAG_EXEC)) {
+    u8 data_format_flag = app_file[NCCH::OFFSET_FLAG_DATA_FORMAT];
+    if ((data_format_flag & NCCH::FLAG_DATA) && !(data_format_flag & NCCH::FLAG_EXEC)) {
         // File is a CFA
         printf("Filetype: CFA\n");
         printf("CFA not yet supported!\n");
@@ -70,37 +94,25 @@ int main(int argc, char** argv)
         // File is a CXI
         printf("Filetype: CXI\n");
 
-        std::vector<u8> exhead_xorpad = ReadBinaryFile(argv[2]);
-        if (exhead_xorpad.empty()) {
-            printf("ERROR: Input exheader XORPad does not exist!\n");
-            return -1;
-        }
-        std::vector<u8> exefs_xorpad  = ReadBinaryFile(argv[3]);
-        if (exefs_xorpad.empty()) {
-            printf("ERROR: Input EXEFS XORPad does not exist!\n");
-            return -1;
-        }
+        if (!CXIDecryptExheader(&app_file[0], ReadBinaryFile(argv[2]))) return -1;
+        if (!CXIDecryptEXEFS(&app_file[0], ReadBinaryFile(argv[3]))) return -1;
 
-        if (data_format_flag & FLAG_NOROMFS) {
+        if (data_format_flag & NCCH::FLAG_NOROMFS) {
             if (argc != 4) {
                 printf("Usage for this filetype: xorer file{.app|.cxi} exheader.xorpad exefs.xorpad\n");
                 return -1;
             }
-            DecryptCXI(&app_file[0], &exhead_xorpad[0], &exefs_xorpad[0]);
         } else {
             if (argc != 5) {
                 printf("Usage for this filetype: xorer file{.app|.cxi} exheader.xorpad exefs.xorpad romfs.xorpad\n");
                 return -1;
             }
 
-            std::vector<u8> romfs_xorpad = ReadBinaryFile(argv[4]);
-            if (romfs_xorpad.empty()) {
-                printf("ERROR: Input ROMFS XORPad does not exist!\n");
-                return -1;
-            }
-
-            DecryptCXI(&app_file[0], &exhead_xorpad[0], &exefs_xorpad[0], &romfs_xorpad[0]);
+            if (!CXIDecryptROMFS(&app_file[0], ReadBinaryFile(argv[4]))) return -1;
         }
+
+        app_file[NCCH::OFFSET_FLAG_CRYPTO] = 0;
+        app_file[NCCH::OFFSET_FLAG_DATA_FORMAT] |= NCCH::FLAG_NOCRYPTO;
         WriteBinaryFile(std::string(argv[1]) + ".cxi", app_file);
     }
 
