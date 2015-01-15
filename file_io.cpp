@@ -15,3 +15,12 @@ std::vector<u8> ReadBinaryFile(const std::string& filename)
     fclose(bin_file);
     return file_buf;
 };
+
+std::string ReplaceExtension(const std::string& filename, const std::string& ext) {
+    std::string new_filename;
+    size_t dot_pos = filename.find_last_of('.');
+    if (dot_pos != std::string::npos)
+    new_filename = filename.substr(0, dot_pos);
+    new_filename += '.' + ext;
+    return new_filename;
+}

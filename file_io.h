@@ -15,3 +15,5 @@ size_t WriteBinaryFile(const std::string& filename, const std::vector<T>& buffer
 }
 
 std::vector<u8> ReadBinaryFile(const std::string& filename);
+
+std::string ReplaceExtension(const std::string& filename, const std::string& ext);

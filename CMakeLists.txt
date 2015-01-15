@@ -7,12 +7,14 @@ set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
 
 set(SOURCE_FILES
     main.cpp
+    ncch.cpp
     file_io.cpp
     polarssl/sha256.c
     )
 set(HEADER_FILES
-    ncch_header.h
+    ncch.h
     file_io.h
+    common_funcs.h
     common_types.h
     polarssl/check_config.h
     polarssl/config.h
