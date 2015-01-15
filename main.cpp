@@ -54,7 +54,7 @@ int main(int argc, char** argv)
         }
 
         ncch.SetDecrypted();
-        WriteBinaryFile(ReplaceExtension(argv[1], "cxi"), app_file);
+        WriteBinaryFile(ReplaceExtension(argv[1], "cxi"), ncch.GetBuffer());
     }
 
     return 0;

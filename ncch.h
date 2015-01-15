@@ -62,6 +62,8 @@ public:
     bool DecryptEXEFS(const std::vector<u8>& xorpad);
     bool DecryptROMFS(const std::vector<u8>& xorpad);
 
+    const std::vector<u8>& GetBuffer() { return file_buf; }
+
     void SetDecrypted() {
         file_buf[NCCH_Header::OFFSET_FLAG_CRYPTO] = 0;
         file_buf[NCCH_Header::OFFSET_FLAG_DATA_FORMAT] |= NCCH_Header::FLAG_NOCRYPTO;
