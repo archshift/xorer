@@ -1,5 +1,13 @@
 #include "file_io.h"
 
+size_t WriteBinaryFile(const std::string& filename, const void* buffer, const size_t buf_size)
+{
+    FILE* file = fopen(filename.c_str(), "wb");
+    size_t size_written = fwrite(buffer, 1, buf_size, file);
+    fclose(file);
+    return size_written;
+}
+
 std::vector<u8> ReadBinaryFile(const std::string& filename)
 {
     FILE* bin_file = fopen(filename.c_str(), "rb");

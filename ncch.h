@@ -1,11 +1,13 @@
 #pragma once
 
 #include <vector>
+#include <array>
 
 #include "common_types.h"
+#include "common_funcs.h"
 
 class NCCH_Header {
-    const std::vector<u8> header;
+    const u8* header;
 public:
     enum : size_t {
         OFFSET_MAGIC             = 0x100,
@@ -30,8 +32,8 @@ public:
         FLAG_NOCRYPTO = 0x4,
     };
 
-    NCCH_Header(const std::vector<u8>& ncch_data):
-        header(ncch_data.begin(), ncch_data.begin() + 0x200) { }
+    NCCH_Header(u8* ncch_data):
+        header(ncch_data) { }
 
     size_t GetExheaderSize()  { return *(u32*)(&header[OFFSET_EXHEADER_SIZE]); }
 
@@ -43,29 +45,95 @@ public:
 
     size_t GetExefsHashSize() { return *(u32*)(&header[OFFSET_EXEFS_HASH_SIZE]) * 0x200; }
     size_t GetRomfsHashSize() { return *(u32*)(&header[OFFSET_ROMFS_HASH_SIZE]) * 0x200; }
+
+    u8 GetDataFormatBitmask() { return header[OFFSET_FLAG_DATA_FORMAT]; }
+};
+
+class EXEFS {
+    u8* buffer;
+
+    typedef u8 FileHash[32];
+public:
+#pragma pack(1)
+    struct FileHeader {
+        char filename[8];
+        u32 file_offset;
+        u32 file_size;
+    };
+
+    struct EXEFS_Header {
+        FileHeader headers[10];
+        INSERT_PADDING(0x20);
+        FileHash hashes[10];
+    } header;
+#pragma pack()
+
+    EXEFS(u8* buffer): buffer(buffer)
+    {
+        memcpy(&header, buffer, 0x200);
+    }
+
+    FileHeader GetCodeHeader()
+    {
+        for (int i = 0; i < 10; ++i) {
+            const char* header_filename = header.headers[i].filename;
+            if (memcmp(header_filename, ".code", 5) == 0)
+                return header.headers[i];
+        }
+        return {};
+    }
+
+    bool VerifyHashes()
+    {
+        for (int i = 0; i < 10; ++i) {
+            static const u8 zero_header[16] = {0};
+            static const u8 zero_hash[32] = {0};
+            // We if the header and the hash are both zero-initialized, there's no code to verify
+            if (memcmp(&header.headers[i], zero_header, 16) == 0 && memcmp(header.hashes[i], zero_hash, 32) == 0)
+                return true;
+
+            // For some reason, the hashes are in reverse order...
+            if (!CompareHash(buffer + 0x200 + header.headers[i].file_offset,
+                             header.headers[i].file_size, header.hashes[9-i]))
+                return false;
+        }
+        return true;
+    }
 };
 
 
 class NCCH {
-    std::vector<u8> file_buf;
+    u8* buffer;
+    size_t size;
     NCCH_Header header;
 public:
+    enum ContainerType {
+        TYPE_CXI,
+        TYPE_CFA
+    };
+
     enum : size_t {
         OFFSET_HEADER   = 0x0,
         OFFSET_EXHEADER = 0x200,
         OFFSET_DATA     = 0xA00,
     };
 
-    NCCH(std::vector<u8> file): file_buf(file), header(file_buf) {}
+    NCCH(u8* buf, size_t size): buffer(buf), size(size), header(buffer) {}
 
     bool DecryptExheader(const std::vector<u8>& xorpad);
     bool DecryptEXEFS(const std::vector<u8>& xorpad);
+    bool DecryptEXEFS(const std::vector<u8>& xorpad_normal, const std::vector<u8>& xorpad_7x);
     bool DecryptROMFS(const std::vector<u8>& xorpad);
 
-    const std::vector<u8>& GetBuffer() { return file_buf; }
+    const u8* GetBuffer() { return buffer; }
+    const size_t GetSize() { return size; }
+
+    const ContainerType GetType();
+
+    const bool HasRomFS() { return (header.GetDataFormatBitmask() & NCCH_Header::FLAG_NOROMFS) == 0; }
 
     void SetDecrypted() {
-        file_buf[NCCH_Header::OFFSET_FLAG_CRYPTO] = 0;
-        file_buf[NCCH_Header::OFFSET_FLAG_DATA_FORMAT] |= NCCH_Header::FLAG_NOCRYPTO;
+        buffer[NCCH_Header::OFFSET_FLAG_CRYPTO] = 0;
+        buffer[NCCH_Header::OFFSET_FLAG_DATA_FORMAT] |= NCCH_Header::FLAG_NOCRYPTO;
     }
 };

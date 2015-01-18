@@ -1,19 +1,13 @@
+#pragma once
+
+#include <cstdlib>
+
 #include "common_types.h"
 
-#include <memory>
+#define INSERT_PADDING_HELPER1(x, y) x ## y
+#define INSERT_PADDING_HELPER2(x, y) INSERT_PADDING_HELPER1(x, y)
+#define INSERT_PADDING(bytes) u8 INSERT_PADDING_HELPER2(__padding, __LINE__)[(bytes)]
 
-#include "polarssl/sha256.h"
+void XOR(u8* target_buf, const u8* xorpad, const size_t size);
 
-void XOR(u8* target_buf, const u8* xorpad, const size_t size)
-{
-    for (size_t byte = 0; byte < size; ++byte) {
-        target_buf[byte] ^= xorpad[byte];
-    }
-}
-
-bool CompareHash(const u8* data_buf, const size_t data_size, const u8* hash_buf)
-{
-    std::unique_ptr<u8> generated_hash(new u8[32]);
-    sha256(data_buf, data_size, generated_hash.get(), 0);
-    return memcmp(generated_hash.get(), hash_buf, 32) == 0;
-}
+bool CompareHash(const u8* data_buf, const size_t data_size, const u8* hash_buf);
