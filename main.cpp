@@ -3,6 +3,11 @@
 #include <vector>
 #include <map>
 
+#ifdef _MSC_VER
+// Required define for MSVC compatibility
+#define __STDC__ 1
+#endif
+
 #include "getopt/getopt.h"
 
 #include "file_io.h"
@@ -52,6 +57,8 @@ bool DecryptNCCH(const optlist& args, NCCH* ncch)
             return true;
         }
     }
+    
+    return false;
 }
 
 bool DecryptNCSD(const optlist& args, NCSD* ncsd)

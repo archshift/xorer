@@ -5,8 +5,6 @@
 
 #include "polarssl/sha256.h"
 
-#define INSERT_PADDING(size) u8 __FILE__ ## __LINE__ ## _padding[(size)]
-
 void XOR(u8* target_buf, const u8* xorpad, const size_t size)
 {
     for (size_t byte = 0; byte < size; ++byte) {
