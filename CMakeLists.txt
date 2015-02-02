@@ -1,9 +1,13 @@
 cmake_minimum_required(VERSION 2.8.4)
 project(xorer)
 
+add_subdirectory(getopt)
+
 include_directories(".")
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+if (NOT MSVC)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+endif()
 
 set(SOURCE_FILES
     common_funcs.cpp
@@ -11,8 +15,6 @@ set(SOURCE_FILES
     ncch.cpp
     ncsd.cpp
     file_io.cpp
-    getopt/getopt.c
-    getopt/getopt1.c
     polarssl/sha256.c
     )
 set(HEADER_FILES
@@ -21,7 +23,6 @@ set(HEADER_FILES
     file_io.h
     common_funcs.h
     common_types.h
-    getopt/getopt.h
     polarssl/check_config.h
     polarssl/config.h
     polarssl/platform.h
@@ -29,3 +30,4 @@ set(HEADER_FILES
     )
 
 add_executable(xorer ${SOURCE_FILES} ${HEADER_FILES})
+target_link_libraries(xorer getopt)
