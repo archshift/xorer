@@ -11,6 +11,8 @@ set(SOURCE_FILES
     ncch.cpp
     ncsd.cpp
     file_io.cpp
+    getopt/getopt.c
+    getopt/getopt1.c
     polarssl/sha256.c
     )
 set(HEADER_FILES
@@ -19,6 +21,7 @@ set(HEADER_FILES
     file_io.h
     common_funcs.h
     common_types.h
+    getopt/getopt.h
     polarssl/check_config.h
     polarssl/config.h
     polarssl/platform.h
