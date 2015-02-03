@@ -15,7 +15,7 @@ bool NCCH::DecryptExheader(const std::vector<u8>& xorpad)
         return false;
     }
 
-    XOR(exheader, &xorpad[0], 0x800);
+    XOR(exheader, xorpad.data(), 0x800);
     if (!CompareHash(exheader, 0x400, &buffer[NCCH_Header::OFFSET_EXHEADER_HASH])) {
         printf("ERROR: Exheader XORPad invalid!\n");
         return false;

@@ -15,7 +15,7 @@
 #include "ncch.h"
 #include "ncsd.h"
 
-typedef std::map<const char*, const char*> optlist;
+typedef std::map<std::string, const char*> optlist;
 
 bool DecryptNCCH(const optlist& args, NCCH* ncch)
 {
@@ -33,16 +33,20 @@ bool DecryptNCCH(const optlist& args, NCCH* ncch)
                 printf("ERROR: The input file type requires an exheader xorpad!\n");
                 return false;
             }
-            if (!ncch->DecryptExheader(ReadBinaryFile(args.at("exheader")))) return false;
+
+            if (!ncch->DecryptExheader(ReadBinaryFile(args.at("exheader"))))
+                return false;
 
             if (args.find("exefs") == args.end()) {
                 printf("ERROR: CXIs without EXEFSs not yet supported!\n");
                 return false;
             }
+
             if (args.find("exefs7") == args.end()) {
-                if (!ncch->DecryptEXEFS(ReadBinaryFile(args.at("exefs")))) return false;
-            } else {
-                if (!ncch->DecryptEXEFS(ReadBinaryFile(args.at("exefs")), ReadBinaryFile(args.at("exefs7")))) return false;
+                if (!ncch->DecryptEXEFS(ReadBinaryFile(args.at("exefs")))) 
+                    return false;
+            } else if (!ncch->DecryptEXEFS(ReadBinaryFile(args.at("exefs")), ReadBinaryFile(args.at("exefs7")))) {
+                    return false;
             }
             
             if (ncch->HasRomFS()) {
@@ -50,7 +54,8 @@ bool DecryptNCCH(const optlist& args, NCCH* ncch)
                     printf("ERROR: The input file type requires a ROMFS xorpad!\n");
                     return false;
                 }
-                if (!ncch->DecryptROMFS(ReadBinaryFile(args.at("romfs")))) return false;
+                if (!ncch->DecryptROMFS(ReadBinaryFile(args.at("romfs")))) 
+                    return false;
             }
 
             ncch->SetDecrypted();
