@@ -17,53 +17,63 @@
 
 typedef std::map<std::string, const char*> optlist;
 
-bool DecryptNCCH(const optlist& args, NCCH* ncch)
+bool DecryptCXI(const optlist& args, NCCH* ncch)
 {
     if (args.find("exefs") == args.end() && args.find("exefs7") != args.end()) {
         printf("ERROR: 7.x EXEFS XORPads must be accompanied by normal EXEFS XORPads!\n");
         return false;
     }
 
-    switch(ncch->GetType()) {
-        case NCCH::TYPE_CFA:
-            printf("ERROR: CFA not yet supported!\n");
-            return false;
-        case NCCH::TYPE_CXI: {
-            if (args.find("exheader") == args.end()) {
-                printf("ERROR: The input file type requires an exheader xorpad!\n");
-                return false;
-            }
-
-            if (!ncch->DecryptExheader(ReadBinaryFile(args.at("exheader"))))
-                return false;
-
-            if (args.find("exefs") == args.end()) {
-                printf("ERROR: CXIs without EXEFSs not yet supported!\n");
-                return false;
-            }
-
-            if (args.find("exefs7") == args.end()) {
-                if (!ncch->DecryptEXEFS(ReadBinaryFile(args.at("exefs")))) 
-                    return false;
-            } else if (!ncch->DecryptEXEFS(ReadBinaryFile(args.at("exefs")), ReadBinaryFile(args.at("exefs7")))) {
-                    return false;
-            }
-            
-            if (ncch->HasRomFS()) {
-                if (args.find("romfs") == args.end()) {
-                    printf("ERROR: The input file type requires a ROMFS xorpad!\n");
-                    return false;
-                }
-                if (!ncch->DecryptROMFS(ReadBinaryFile(args.at("romfs")))) 
-                    return false;
-            }
-
-            ncch->SetDecrypted();
-            return true;
-        }
+    if (args.find("exheader") == args.end()) {
+        printf("ERROR: The input file type requires an exheader xorpad!\n");
+        return false;
     }
-    
-    return false;
+
+    if (!ncch->DecryptExheader(ReadBinaryFile(args.at("exheader"))))
+        return false;
+
+    if (args.find("exefs") == args.end()) {
+        printf("ERROR: CXIs without EXEFSs not yet supported!\n");
+        return false;
+    }
+
+    if (args.find("exefs7") == args.end()) {
+        if (!ncch->DecryptEXEFS(ReadBinaryFile(args.at("exefs"))))
+            return false;
+    } else if (!ncch->DecryptEXEFS(ReadBinaryFile(args.at("exefs")), ReadBinaryFile(args.at("exefs7")))) {
+        return false;
+    }
+
+    if (ncch->HasRomFS()) {
+        if (args.find("romfs") == args.end()) {
+            printf("ERROR: The input file type requires a ROMFS xorpad!\n");
+            return false;
+        }
+        if (!ncch->DecryptROMFS(ReadBinaryFile(args.at("romfs"))))
+            return false;
+    }
+
+    ncch->SetDecrypted();
+    return true;
+}
+
+bool DecryptCFA(const optlist& args, NCCH* ncch)
+{
+    if (args.find("exefs") != args.end() || args.find("exefs7") != args.end()) {
+        printf("ERROR: CFAs with EXEFSs not yet supported!\n");
+        return false;
+    }
+
+    if (ncch->HasRomFS()) {
+        if (args.find("romfs") == args.end()) {
+            printf("ERROR: The input file type requires a ROMFS xorpad!\n");
+            return false;
+        }
+        if (!ncch->DecryptROMFS(ReadBinaryFile(args.at("romfs"))))
+            return false;
+    }
+
+    return true;
 }
 
 bool DecryptNCSD(const optlist& args, NCSD* ncsd)
@@ -71,7 +81,11 @@ bool DecryptNCSD(const optlist& args, NCSD* ncsd)
     // We'll only decrypt the first NCCH
     NCCH ncch = ncsd->GetNCCH(0);
     printf("WARNING: Only decryption of the first NCCH is supported!\n");
-    return DecryptNCCH(args, &ncch);
+    switch(ncch.GetType()) {
+        case NCCH::TYPE_CXI: return DecryptCXI(args, &ncch);
+        case NCCH::TYPE_CFA: return DecryptCFA(args, &ncch);
+    }
+    return false;
 }
 
 void ShowHelpInfo()
@@ -136,14 +150,28 @@ int main(int argc, char** argv)
 
     if (memcmp(&app_file[NCCH_Header::OFFSET_MAGIC], "NCCH", 4) == 0) {
         NCCH ncch(&app_file[0], app_file.size());
-        if (!DecryptNCCH(prsd, &ncch))
-            return 1;
-        WriteBinaryFile(ReplaceExtension(app_file_name, "cxi"), ncch.GetBuffer(), ncch.GetSize());
+        std::string file_extension;
+        switch(ncch.GetType()) {
+            case NCCH::TYPE_CXI:
+                if (!DecryptCXI(prsd, &ncch))
+                    return 1;
+                file_extension = "cxi";
+                break;
+            case NCCH::TYPE_CFA:
+                if (!DecryptCFA(prsd, &ncch))
+                    return 1;
+                file_extension = "cfa";
+                break;
+        }
+
+        WriteBinaryFile(ReplaceExtension(app_file_name, file_extension), ncch.GetBuffer(), ncch.GetSize());
+
     } else if (memcmp(&app_file[NCSD_Header::OFFSET_MAGIC], "NCSD", 4) == 0) {
         NCSD ncsd(&app_file[0], app_file.size());
         if (!DecryptNCSD(prsd, &ncsd))
             return 1;
         WriteBinaryFile(ReplaceExtension(app_file_name, "cci"), ncsd.GetBuffer(), ncsd.GetSize());
+
     } else {
         printf("ERROR: Unsupported input file type!");
         return 1;
