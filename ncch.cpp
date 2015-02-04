@@ -111,8 +111,8 @@ bool NCCH::DecryptROMFS(const std::vector<u8>& xorpad)
 
 const NCCH::ContainerType NCCH::GetType()
 {
-    u8 data_format_flag = buffer[NCCH_Header::OFFSET_FLAG_DATA_FORMAT];
-    if ((data_format_flag & NCCH_Header::FLAG_DATA) && !(data_format_flag & NCCH_Header::FLAG_EXEC))
+    u8 content_type_flag = buffer[NCCH_Header::OFFSET_FLAG_CONTENT_TYPE];
+    if ((content_type_flag & NCCH_Header::FLAG_DATA) && !(content_type_flag & NCCH_Header::FLAG_EXEC))
         return TYPE_CFA;
     else
         return TYPE_CXI;
