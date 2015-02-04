@@ -73,6 +73,7 @@ bool DecryptCFA(const optlist& args, NCCH* ncch)
             return false;
     }
 
+    ncch->SetDecrypted();
     return true;
 }
 
