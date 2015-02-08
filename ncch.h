@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <array>
+#include <cstring>
 
 #include "common_types.h"
 #include "common_funcs.h"
