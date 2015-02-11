@@ -1,0 +1,12 @@
+language: cpp
+
+before_install:
+ - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+ - sudo apt-get -qq update
+ - sudo apt-get -qq install g++-4.9
+ - sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-4.9 90
+ - sudo apt-get install lib32stdc++6
+
+script:
+ - cmake .
+ - make
