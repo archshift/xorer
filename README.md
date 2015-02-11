@@ -1,4 +1,6 @@
 # xorer
+![Build Status](https://travis-ci.org/archshift/xorer.svg?branch=master)
+
 A XORPad applier for decrypting 3DS files
 
 ## Using xorer
