@@ -119,7 +119,7 @@ void ParseArgs(int argc, char** argv, optlist* opts, flaglist* flags)
             { 0 },
         };
 
-        c = getopt_long(argc, argv, "he:x:r:7:p:i", long_options, &option_index);
+        c = getopt_long(argc, argv, "he:x:r:7:p:", long_options, &option_index);
         if (c == -1)
             break;
 
