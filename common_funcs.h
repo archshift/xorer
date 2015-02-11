@@ -3,6 +3,7 @@
 #include <cstdlib>
 #include <vector>
 #include <map>
+#include <algorithm>
 
 #include "common_types.h"
 
