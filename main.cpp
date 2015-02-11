@@ -16,6 +16,7 @@
 #include "ncsd.h"
 
 typedef std::map<std::string, const char*> optlist;
+typedef std::vector<std::string> flaglist;
 
 bool DecryptCXI(const optlist& args, NCCH* ncch)
 {
@@ -77,14 +78,11 @@ bool DecryptCFA(const optlist& args, NCCH* ncch)
     return true;
 }
 
-bool DecryptNCSD(const optlist& args, NCSD* ncsd)
+bool DecryptNCCH(const optlist& args, NCCH* ncch)
 {
-    // We'll only decrypt the first NCCH
-    NCCH ncch = ncsd->GetNCCH(0);
-    printf("WARNING: Only decryption of the first NCCH is supported!\n");
-    switch(ncch.GetType()) {
-        case NCCH::TYPE_CXI: return DecryptCXI(args, &ncch);
-        case NCCH::TYPE_CFA: return DecryptCFA(args, &ncch);
+    switch(ncch->GetType()) {
+        case NCCH::TYPE_CXI: return DecryptCXI(args, ncch);
+        case NCCH::TYPE_CFA: return DecryptCFA(args, ncch);
     }
     return false;
 }
@@ -92,42 +90,47 @@ bool DecryptNCSD(const optlist& args, NCSD* ncsd)
 void ShowHelpInfo()
 {
     printf("xorer: Apply XORPads to encrypted 3DS files\n");
-    printf("Usage: xorer <file> [-e xorpad] [-x xorpad] [-r xorpad] [-7 xorpad]\n");
-    printf("  -h  --help      Display this help information\n");
-    printf("  -e  --exheader  Specify the Exheader XORPad\n");
-    printf("  -x  --exefs     Specify the (normal) EXEFS Xorpad\n");
-    printf("  -r  --romfs     Specify the ROMFS Xorpad\n");
-    printf("  -7  --exefs7    Specify the 7.x EXEFS Xorpad\n");
+    printf("Usage: xorer <file> [-p num] [-e xorpad] [-x xorpad] [-r xorpad] [-7 xorpad]\n");
+    printf("  -h  --help        Display this help information\n");
+    printf("  -e  --exheader    Specify the Exheader XORPad\n");
+    printf("  -x  --exefs       Specify the (normal) EXEFS Xorpad\n");
+    printf("  -r  --romfs       Specify the ROMFS Xorpad\n");
+    printf("  -7  --exefs7      Specify the 7.x EXEFS Xorpad\n");
+    printf("NCSD options:\n");
+    printf("  -p  --partition   Specify the partition number to decrypt\n");
+    printf("      --extract     Extract the individual partition during decryption\n");
     exit(1);
 }
 
-int main(int argc, char** argv)
+void ParseArgs(int argc, char** argv, optlist* opts, flaglist* flags)
 {
-    optlist prsd;
     int c;
-    while (true)
-    {
+    while (true) {
         int option_index;
-        static struct option long_options[] =
-        {
-            { "help",     no_argument,       nullptr, 'h'},
-            { "exheader", required_argument, nullptr, 'e'},
-            { "exefs",    required_argument, nullptr, 'x'},
-            { "romfs",    required_argument, nullptr, 'r'},
-            { "exefs7",   required_argument, nullptr, '7'},
+        static struct option long_options[] = {
+            { "help",       no_argument,       nullptr, 'h'},
+            { "exheader",   required_argument, nullptr, 'e'},
+            { "exefs",      required_argument, nullptr, 'x'},
+            { "romfs",      required_argument, nullptr, 'r'},
+            { "exefs7",     required_argument, nullptr, '7'},
+
+            { "partition",  required_argument, nullptr, 'p'},
+            { "extract",    no_argument,       nullptr, 0},
             { 0 },
         };
 
-        c = getopt_long(argc, argv, "he:x:r:7:", long_options, &option_index);
+        c = getopt_long(argc, argv, "he:x:r:7:p:i", long_options, &option_index);
         if (c == -1)
             break;
 
-        switch (c)
-        {
-            case 'e': prsd["exheader"] = optarg; break;
-            case 'x': prsd["exefs"]    = optarg; break;
-            case 'r': prsd["romfs"]    = optarg; break;
-            case '7': prsd["exefs7"]   = optarg; break;
+        switch (c) {
+            case 'e': (*opts)["exheader"]   = optarg; break;
+            case 'x': (*opts)["exefs"]      = optarg; break;
+            case 'r': (*opts)["romfs"]      = optarg; break;
+            case '7': (*opts)["exefs7"]     = optarg; break;
+            case 'p': (*opts)["partition"]  = optarg; break;
+
+            case 0: flags->push_back("extract"); break;
 
             case 'h':
             default:
@@ -135,13 +138,21 @@ int main(int argc, char** argv)
         }
     }
 
+    if (argc - optind != 1)
+        ShowHelpInfo();
+}
+
+int main(int argc, char** argv)
+{
+    optlist opts;
+    flaglist flags;
+    ParseArgs(argc, argv, &opts, &flags);
+
     std::string app_file_name;
     std::vector<u8> app_file;
     if (argc - optind == 1) {
         app_file_name = argv[optind++];
         app_file = ReadBinaryFile(app_file_name);
-    } else {
-        ShowHelpInfo();
     }
 
     if (app_file.empty()) {
@@ -152,25 +163,40 @@ int main(int argc, char** argv)
     if (memcmp(&app_file[NCCH_Header::OFFSET_MAGIC], "NCCH", 4) == 0) {
         NCCH ncch(&app_file[0], app_file.size());
         std::string file_extension;
-        switch(ncch.GetType()) {
-            case NCCH::TYPE_CXI:
-                if (!DecryptCXI(prsd, &ncch))
-                    return 1;
-                file_extension = "cxi";
-                break;
-            case NCCH::TYPE_CFA:
-                if (!DecryptCFA(prsd, &ncch))
-                    return 1;
-                file_extension = "cfa";
-                break;
-        }
 
-        WriteBinaryFile(ReplaceExtension(app_file_name, file_extension), ncch.GetBuffer(), ncch.GetSize());
+        if (!DecryptNCCH(opts, &ncch))
+            return 1;
+
+        WriteBinaryFile(ReplaceExtension(app_file_name, ncch.GetFileExt()), ncch.GetBuffer(), ncch.GetSize());
 
     } else if (memcmp(&app_file[NCSD_Header::OFFSET_MAGIC], "NCSD", 4) == 0) {
         NCSD ncsd(&app_file[0], app_file.size());
-        if (!DecryptNCSD(prsd, &ncsd))
+        std::string file_extension;
+        int partition_number;
+
+        if (Found(opts, "partition")) {
+            try {
+                partition_number = std::stoi(opts.at("partition"));
+            } catch (std::invalid_argument) {
+                printf("ERROR: Invalid partition number!");
+                return 1;
+            }
+        } else {
+            printf("WARNING: Partition number unspecified!\n"
+                   "Only decrypting the first partition!\n");
+            partition_number = 0;
+        }
+
+        NCCH ncch = ncsd.GetNCCH(partition_number);
+        if (!DecryptNCCH(opts, &ncch))
             return 1;
+
+        if (Found(flags, "extract")) {
+            WriteBinaryFile(ReplaceExtension(app_file_name,
+                "part" + std::to_string(partition_number) + "." + ncch.GetFileExt()),
+                ncch.GetBuffer(), ncch.GetSize());
+            return 0;
+        }
         WriteBinaryFile(ReplaceExtension(app_file_name, "cci"), ncsd.GetBuffer(), ncsd.GetSize());
 
     } else {

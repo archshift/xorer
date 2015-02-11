@@ -130,6 +130,7 @@ public:
     const size_t GetSize() { return size; }
 
     const ContainerType GetType();
+    const std::string GetFileExt();
 
     const bool HasRomFS() { return (header.GetDataFormatBitmask() & NCCH_Header::FLAG_NOROMFS) == 0; }
 

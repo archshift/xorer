@@ -1,5 +1,7 @@
 #include "ncch.h"
 
+#include <string>
+
 #include "common_funcs.h"
 
 bool NCCH::DecryptExheader(const std::vector<u8>& xorpad)
@@ -116,4 +118,12 @@ const NCCH::ContainerType NCCH::GetType()
         return TYPE_CFA;
     else
         return TYPE_CXI;
+}
+
+const std::string NCCH::GetFileExt()
+{
+    switch(GetType()) {
+        case NCCH::TYPE_CXI: return "cxi";
+        case NCCH::TYPE_CFA: return "cfa";
+    }
 }
