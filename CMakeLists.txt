@@ -2,6 +2,7 @@ cmake_minimum_required(VERSION 2.8.4)
 project(xorer)
 
 add_subdirectory(getopt)
+add_subdirectory(polarssl)
 
 include_directories(".")
 
@@ -15,7 +16,6 @@ set(SOURCE_FILES
     ncch.cpp
     ncsd.cpp
     file_io.cpp
-    polarssl/sha256.c
     )
 set(HEADER_FILES
     ncch.h
@@ -23,11 +23,7 @@ set(HEADER_FILES
     file_io.h
     common_funcs.h
     common_types.h
-    polarssl/check_config.h
-    polarssl/config.h
-    polarssl/platform.h
-    polarssl/sha256.h
     )
 
 add_executable(xorer ${SOURCE_FILES} ${HEADER_FILES})
-target_link_libraries(xorer getopt)
+target_link_libraries(xorer getopt polarssl)
