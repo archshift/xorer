@@ -1,5 +1,6 @@
 # xorer
-![Build Status](https://travis-ci.org/archshift/xorer.svg?branch=master)
+[![Build Status](https://travis-ci.org/archshift/xorer.svg?branch=master)](https://travis-ci.org/archshift/xorer)
+[![Build Status](https://ci.appveyor.com/api/projects/status/9hrxmka4r8rey9e8?svg=true)](https://ci.appveyor.com/project/archshift/xorer)
 
 A XORPad applier for decrypting 3DS files
 
