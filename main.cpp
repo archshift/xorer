@@ -19,12 +19,12 @@ typedef std::map<std::string, const char*> optlist;
 
 bool DecryptCXI(const optlist& args, NCCH* ncch)
 {
-    if (args.find("exefs") == args.end() && args.find("exefs7") != args.end()) {
+    if (!Found(args, "exefs") && !Found(args, "exefs7")) {
         printf("ERROR: 7.x EXEFS XORPads must be accompanied by normal EXEFS XORPads!\n");
         return false;
     }
 
-    if (args.find("exheader") == args.end()) {
+    if (!Found(args, "exheader")) {
         printf("ERROR: The input file type requires an exheader xorpad!\n");
         return false;
     }
@@ -32,12 +32,12 @@ bool DecryptCXI(const optlist& args, NCCH* ncch)
     if (!ncch->DecryptExheader(ReadBinaryFile(args.at("exheader"))))
         return false;
 
-    if (args.find("exefs") == args.end()) {
+    if (!Found(args, "exefs")) {
         printf("ERROR: CXIs without EXEFSs not yet supported!\n");
         return false;
     }
 
-    if (args.find("exefs7") == args.end()) {
+    if (!Found(args, "exefs7")) {
         if (!ncch->DecryptEXEFS(ReadBinaryFile(args.at("exefs"))))
             return false;
     } else if (!ncch->DecryptEXEFS(ReadBinaryFile(args.at("exefs")), ReadBinaryFile(args.at("exefs7")))) {
@@ -45,7 +45,7 @@ bool DecryptCXI(const optlist& args, NCCH* ncch)
     }
 
     if (ncch->HasRomFS()) {
-        if (args.find("romfs") == args.end()) {
+        if (!Found(args, "romfs")) {
             printf("ERROR: The input file type requires a ROMFS xorpad!\n");
             return false;
         }
@@ -59,13 +59,13 @@ bool DecryptCXI(const optlist& args, NCCH* ncch)
 
 bool DecryptCFA(const optlist& args, NCCH* ncch)
 {
-    if (args.find("exefs") != args.end() || args.find("exefs7") != args.end()) {
+    if (Found(args, "exefs") || Found(args, "exefs7")) {
         printf("ERROR: CFAs with EXEFSs not yet supported!\n");
         return false;
     }
 
     if (ncch->HasRomFS()) {
-        if (args.find("romfs") == args.end()) {
+        if (!Found(args, "romfs")) {
             printf("ERROR: The input file type requires a ROMFS xorpad!\n");
             return false;
         }
