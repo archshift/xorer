@@ -9,3 +9,28 @@ before_build:
   - cd build
   - cmake -G "Visual Studio 12 Win64" ..
   - cd ..
+
+after_build:
+  - 7z a build .\build\release\xorer.exe
+
+    # sanitize the output filename so Windows doesn't complain
+  - npm install sanitize-filename
+  - for /f "usebackq tokens=*" %%a in (`node .make-appveyor-filename.js`) do set BUILD_NAME=%%a
+  - echo "%BUILD_NAME%"
+  - rename build.7z "%BUILD_NAME%"
+
+artifacts:
+  - path: $(BUILD_NAME)
+    name: deploy-build
+
+deploy:
+  - provider: FTP
+    on:
+      branch: master
+    protocol: sftp
+    host: archshift.com
+    username: builds
+    password:
+      secure: 1R+NBu9p3KStaLaxGoc9xw== 
+    folder: /xorer/nightly/windows/
+    artifact: deploy-build
