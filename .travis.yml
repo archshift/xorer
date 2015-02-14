@@ -10,3 +10,13 @@ before_install:
 script:
  - cmake .
  - make
+
+env:
+  global:
+    secure: "EGPIwMAi/OJmmJyfJgEIaQLNEb4+HzsNcf1s0mSudSarAbwloc/5W29V+iQi4/GZUFky/IA/C/xdzlbeSsOuSxEkHu0QxYX2x5xXdbkD+jlX/YW5nUBDgGUGH3U2U5YowEuZLJdVRkDnalUFHOMsDHOGT+FfxX4RhcQ6B//ml2A="
+
+after_success:
+  - sudo apt-get -qq install lftp
+  - ARCHIVE_NAME="`git show -s --format='%h - %s' | cut -c1-111`.7z"
+  - tar -czvf "$ARCHIVE_NAME" xorer
+  - lftp -c "open -u builds,$BUILD_PASSWORD sftp://archshift.com; put -O '/xorer/nightly/linux' '$ARCHIVE_NAME'"
