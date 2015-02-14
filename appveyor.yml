@@ -11,13 +11,9 @@ before_build:
   - cd ..
 
 after_build:
-  - 7z a build .\build\release\xorer.exe
-
-    # sanitize the output filename so Windows doesn't complain
-  - npm install sanitize-filename
-  - for /f "usebackq tokens=*" %%a in (`node .make-appveyor-filename.js`) do set BUILD_NAME=%%a
-  - echo "%BUILD_NAME%"
-  - rename build.7z "%BUILD_NAME%"
+  - for /f "usebackq tokens=*" %%a in (`git show -s --format "%%h-%%f"`) do set BUILD_NAME_UNCUT=%%a
+  - set BUILD_NAME=%BUILD_NAME_UNCUT:~0,100%
+  - 7z a %BUILD_NAME% .\build\release\xorer.exe
 
 artifacts:
   - path: $(BUILD_NAME)
