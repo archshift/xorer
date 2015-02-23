@@ -91,7 +91,10 @@ void ShowHelpInfo()
 {
     printf("xorer: Apply XORPads to encrypted 3DS files\n");
     printf("Usage: xorer <file> [-p num] [-e xorpad] [-x xorpad] [-r xorpad] [-7 xorpad]\n");
+    printf("       xorer --dumb <file> <xorpad>\n");
     printf("  -h  --help        Display this help information\n");
+    printf("      --dumb        XOR the first argument with the second argument\n");
+    printf("NCCH or NCSD options:\n");
     printf("  -e  --exheader    Specify the Exheader XORPad\n");
     printf("  -x  --exefs       Specify the (normal) EXEFS Xorpad\n");
     printf("  -r  --romfs       Specify the ROMFS Xorpad\n");
@@ -109,6 +112,8 @@ void ParseArgs(int argc, char** argv, optlist* opts, flaglist* flags)
         int option_index;
         static struct option long_options[] = {
             { "help",       no_argument,       nullptr, 'h'},
+            { "dumb",       no_argument,       nullptr, 1},
+
             { "exheader",   required_argument, nullptr, 'e'},
             { "exefs",      required_argument, nullptr, 'x'},
             { "romfs",      required_argument, nullptr, 'r'},
@@ -131,15 +136,13 @@ void ParseArgs(int argc, char** argv, optlist* opts, flaglist* flags)
             case 'p': (*opts)["partition"]  = optarg; break;
 
             case 0: flags->push_back("extract"); break;
+            case 1: flags->push_back("dumb"); break;
 
             case 'h':
             default:
                 ShowHelpInfo();
         }
     }
-
-    if (argc - optind != 1)
-        ShowHelpInfo();
 }
 
 int main(int argc, char** argv)
@@ -150,9 +153,28 @@ int main(int argc, char** argv)
 
     std::string app_file_name;
     std::vector<u8> app_file;
-    if (argc - optind == 1) {
+    if (Found(flags, "dumb") && argc - optind == 2) {
         app_file_name = argv[optind++];
         app_file = ReadBinaryFile(app_file_name);
+        std::vector<u8> xorpad = ReadBinaryFile(argv[optind++]);
+
+        if (app_file.empty()) {
+            printf("ERROR: Input file does not exist!\n");
+            return 1;
+        } else if (xorpad.empty()) {
+            printf("ERROR: Xorpad file does not exist!\n");
+            return 1;
+        }
+
+        XOR(&app_file[0], &xorpad[0], app_file.size());
+        WriteBinaryFile(app_file_name + ".decrypted", &app_file[0], app_file.size());
+        return 0;
+        
+    } else if (argc - optind == 1) {
+        app_file_name = argv[optind++];
+        app_file = ReadBinaryFile(app_file_name);
+    } else {
+        ShowHelpInfo();
     }
 
     if (app_file.empty()) {
