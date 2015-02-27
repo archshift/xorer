@@ -28,4 +28,4 @@ make
 ```
 Obviously you'll first need to install CMake in order to build xorer.
 
-NOTE: Under Windows, CMake uses Visual Studio as the default generator, so either you'll have to compile it by opening the generated solution file in Visual Studio, or you'll have to specify -D "Unix Makefiles" with CMake.
+NOTE: Under Windows, CMake uses Visual Studio as the default generator, so either you'll have to compile it by opening the generated solution file in Visual Studio, or you'll have to specify `-G "Unix Makefiles"` with CMake.
