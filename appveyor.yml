@@ -12,8 +12,7 @@ before_build:
 
 after_build:
   - ps: git show -s --pretty=format:%h-%f > git-rev.txt
-  - type git-rev.txt
-  - set /p BUILD_NAME_UNCUT=<git-rev.txt
+  - for /f "usebackq tokens=*" %%a in (git-rev.txt) do set BUILD_NAME_UNCUT=%%a
   - set BUILD_NAME=%BUILD_NAME_UNCUT:~0,100%
   - 7z a %BUILD_NAME% .\build\release\xorer.exe
 
