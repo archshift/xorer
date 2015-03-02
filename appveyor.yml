@@ -11,7 +11,7 @@ before_build:
   - cd ..
 
 after_build:
-  - for /f "usebackq tokens=*" %%a in (`git show -s --format "%%h-%%f"`) do set BUILD_NAME_UNCUT=%%a
+  - for /f "usebackq tokens=*" %%a in (`git show -s --format=%%h-%%f`) do set BUILD_NAME_UNCUT=%%a
   - set BUILD_NAME=%BUILD_NAME_UNCUT:~0,100%
   - 7z a %BUILD_NAME% .\build\release\xorer.exe
 
