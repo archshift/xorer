@@ -4,6 +4,10 @@ platform:
 configuration:
   - Release
 
+environment:
+  BUILD_PASSWORD:
+    secure: 1R+NBu9p3KStaLaxGoc9xw==
+
 before_build:
   - mkdir build
   - cd build
@@ -11,23 +15,10 @@ before_build:
   - cd ..
 
 after_build:
-  - ps: git show -s --pretty=format:%h-%f > git-rev.txt
-  - for /f "usebackq tokens=*" %%a in (git-rev.txt) do set BUILD_NAME_UNCUT=%%a
-  - set BUILD_NAME=%BUILD_NAME_UNCUT:~0,100%
-  - 7z a %BUILD_NAME% .\build\release\xorer.exe
+  - ps: $BUILD_NAME_UNCUT = git show -s --pretty=format:%h-%f | Out-String
+  - ps: $BUILD_NAME = $BUILD_NAME_UNCUT.Substring(0, [System.Math]::Min(100, $BUILD_NAME_UNCUT.Length)) -replace "`n|`r",""
+  - ps: 7z a $BUILD_NAME .\build\release\xorer.exe
+  - ps: Invoke-WebRequest "http://hivelocity.dl.sourceforge.net/project/winscp/WinSCP/5.7/winscp570.zip" -OutFile "winscp570.zip" 
+  - ps: 7z e -y winscp570.zip
+  - ps: .\WinSCP.com /command "option batch abort" "option confirm off" "open sftp://builds:${env:BUILD_PASSWORD}@archshift.com -hostkey=*" "put $BUILD_NAME /xorer/nightly/windows/" "exit"
 
-artifacts:
-  - path: $(BUILD_NAME)
-    name: deploy-build
-
-deploy:
-  - provider: FTP
-    on:
-      branch: master
-    protocol: sftp
-    host: archshift.com
-    username: builds
-    password:
-      secure: 1R+NBu9p3KStaLaxGoc9xw== 
-    folder: /xorer/nightly/windows/
-    artifact: deploy-build
