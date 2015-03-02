@@ -11,7 +11,7 @@ before_build:
   - cd ..
 
 after_build:
-  - git show -s --pretty=format:%h-%f > git-rev.txt
+  - git show -s --pretty=format:%%h-%%f > git-rev.txt
   - type git-rev.txt
   - set /p BUILD_NAME_UNCUT=<git-rev.txt
   - set BUILD_NAME=%BUILD_NAME_UNCUT:~0,100%
