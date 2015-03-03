@@ -31,7 +31,7 @@ unsigned int str_to_uint(const std::string str)
 
 std::string uint_to_str(unsigned int num)
 {
-	std::ostringstream stream;
-	stream << num;
-	return stream.str();
+    std::ostringstream stream;
+    stream << num;
+    return stream.str();
 }
