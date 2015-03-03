@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <algorithm>
+#include <string>
 
 #include "common_types.h"
 
@@ -14,6 +15,9 @@
 void XOR(u8* target_buf, const u8* xorpad, const size_t size);
 
 bool CompareHash(const u8* data_buf, const size_t data_size, const u8* hash_buf);
+
+unsigned int str_to_uint(const std::string str);
+std::string uint_to_str(unsigned int num);
 
 template <typename AT, typename T>
 bool Found(const std::vector<AT>& vec, T item) {
