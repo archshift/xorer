@@ -1,4 +1,5 @@
 #include "file_io.h"
+#include <cstdio>
 
 size_t WriteBinaryFile(const std::string& filename, const void* buffer, const size_t buf_size)
 {
