@@ -4,6 +4,10 @@
 
 A XORPad applier for decrypting 3DS files
 
+### Download
+
+[Nightly builds](http://builds.archshift.com/xorer/nightly) (sort by date)
+
 ## Using xorer
 Using the program is easy. After it is built, simply run it from the command line with the 3DS application as the first argument, and the xorpad files as the subsequent arguments. Example:
 ```
