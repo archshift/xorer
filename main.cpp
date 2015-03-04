@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <vector>
 #include <map>
+#include <iostream>
 
 #ifdef _MSC_VER
 // Required define for MSVC compatibility
@@ -15,18 +16,18 @@
 #include "ncch.h"
 #include "ncsd.h"
 
-typedef std::map<std::string, const char*> optlist;
+typedef std::map<std::string, std::string> optlist;
 typedef std::vector<std::string> flaglist;
 
 bool DecryptCXI(const optlist& args, NCCH* ncch)
 {
     if (!Found(args, "exefs") && !Found(args, "exefs7")) {
-        printf("ERROR: 7.x EXEFS XORPads must be accompanied by normal EXEFS XORPads!\n");
+        std::cerr << "ERROR: 7.x EXEFS XORPads must be accompanied by normal EXEFS XORPads!\n";
         return false;
     }
 
     if (!Found(args, "exheader")) {
-        printf("ERROR: The input file type requires an exheader xorpad!\n");
+        std::cerr << "ERROR: The input file type requires an exheader xorpad!\n";
         return false;
     }
 
@@ -34,7 +35,7 @@ bool DecryptCXI(const optlist& args, NCCH* ncch)
         return false;
 
     if (!Found(args, "exefs")) {
-        printf("ERROR: CXIs without EXEFSs not yet supported!\n");
+        std::cerr << "ERROR: CXIs without EXEFSs not yet supported!\n";
         return false;
     }
 
@@ -47,7 +48,7 @@ bool DecryptCXI(const optlist& args, NCCH* ncch)
 
     if (ncch->HasRomFS()) {
         if (!Found(args, "romfs")) {
-            printf("ERROR: The input file type requires a ROMFS xorpad!\n");
+            std::cerr << "ERROR: The input file type requires a ROMFS xorpad!\n";
             return false;
         }
         if (!ncch->DecryptROMFS(ReadBinaryFile(args.at("romfs"))))
@@ -61,13 +62,13 @@ bool DecryptCXI(const optlist& args, NCCH* ncch)
 bool DecryptCFA(const optlist& args, NCCH* ncch)
 {
     if (Found(args, "exefs") || Found(args, "exefs7")) {
-        printf("ERROR: CFAs with EXEFSs not yet supported!\n");
+        std::cerr << "ERROR: CFAs with EXEFSs not yet supported!\n";
         return false;
     }
 
     if (ncch->HasRomFS()) {
         if (!Found(args, "romfs")) {
-            printf("ERROR: The input file type requires a ROMFS xorpad!\n");
+            std::cerr << "ERROR: The input file type requires a ROMFS xorpad!\n";
             return false;
         }
         if (!ncch->DecryptROMFS(ReadBinaryFile(args.at("romfs"))))
@@ -89,19 +90,19 @@ bool DecryptNCCH(const optlist& args, NCCH* ncch)
 
 void ShowHelpInfo()
 {
-    printf("xorer: Apply XORPads to encrypted 3DS files\n");
-    printf("Usage: xorer <file> [-p num] [-e xorpad] [-x xorpad] [-r xorpad] [-7 xorpad]\n");
-    printf("       xorer --dumb <file> <xorpad>\n");
-    printf("  -h  --help        Display this help information\n");
-    printf("      --dumb        XOR the first argument with the second argument\n");
-    printf("NCCH or NCSD options:\n");
-    printf("  -e  --exheader    Specify the Exheader XORPad\n");
-    printf("  -x  --exefs       Specify the (normal) EXEFS Xorpad\n");
-    printf("  -r  --romfs       Specify the ROMFS Xorpad\n");
-    printf("  -7  --exefs7      Specify the 7.x EXEFS Xorpad\n");
-    printf("NCSD options:\n");
-    printf("  -p  --partition   Specify the partition number to decrypt\n");
-    printf("      --extract     Extract the individual partition during decryption\n");
+    std::cerr << "xorer: Apply XORPads to encrypted 3DS files\n";
+    std::cerr << "Usage: xorer <file> [-p num] [-e xorpad] [-x xorpad] [-r xorpad] [-7 xorpad]\n";
+    std::cerr << "       xorer --dumb <file> <xorpad>\n";
+    std::cerr << "  -h  --help        Display this help information\n";
+    std::cerr << "      --dumb        XOR the first argument with the second argument\n";
+    std::cerr << "NCCH or NCSD options:\n";
+    std::cerr << "  -e  --exheader    Specify the Exheader XORPad\n";
+    std::cerr << "  -x  --exefs       Specify the (normal) EXEFS Xorpad\n";
+    std::cerr << "  -r  --romfs       Specify the ROMFS Xorpad\n";
+    std::cerr << "  -7  --exefs7      Specify the 7.x EXEFS Xorpad\n";
+    std::cerr << "NCSD options:\n";
+    std::cerr << "  -p  --partition   Specify the partition number to decrypt\n";
+    std::cerr << "      --extract     Extract the individual partition during decryption\n";
     exit(1);
 }
 
@@ -159,10 +160,10 @@ int main(int argc, char** argv)
         std::vector<u8> xorpad = ReadBinaryFile(argv[optind++]);
 
         if (app_file.empty()) {
-            printf("ERROR: Input file does not exist!\n");
+            std::cerr << "ERROR: Input file does not exist!\n";
             return 1;
         } else if (xorpad.empty()) {
-            printf("ERROR: Xorpad file does not exist!\n");
+            std::cerr << "ERROR: Xorpad file does not exist!\n";
             return 1;
         }
 
@@ -178,7 +179,7 @@ int main(int argc, char** argv)
     }
 
     if (app_file.empty()) {
-        printf("ERROR: Input file does not exist!\n");
+        std::cerr << "ERROR: Input file does not exist!\n";
         return 1;
     }
 
@@ -194,18 +195,18 @@ int main(int argc, char** argv)
     } else if (memcmp(&app_file[NCSD_Header::OFFSET_MAGIC], "NCSD", 4) == 0) {
         NCSD ncsd(&app_file[0], app_file.size());
         std::string file_extension;
-        int partition_number;
+        unsigned int partition_number;
 
         if (Found(opts, "partition")) {
             try {
-                partition_number = std::stoi(opts.at("partition"));
+                partition_number = str_to_uint(opts.at("partition"));
             } catch (std::invalid_argument) {
-                printf("ERROR: Invalid partition number!");
+                std::cerr << "ERROR: Invalid partition number!";
                 return 1;
             }
         } else {
-            printf("WARNING: Partition number unspecified!\n"
-                   "Only decrypting the first partition!\n");
+            std::cerr << "WARNING: Partition number unspecified!\n"
+                   "Only decrypting the first partition!\n";
             partition_number = 0;
         }
 
@@ -215,14 +216,14 @@ int main(int argc, char** argv)
 
         if (Found(flags, "extract")) {
             WriteBinaryFile(ReplaceExtension(app_file_name,
-                "part" + std::to_string(partition_number) + "." + ncch.GetFileExt()),
+                "part" + uint_to_str(partition_number) + "." + ncch.GetFileExt()),
                 ncch.GetBuffer(), ncch.GetSize());
             return 0;
         }
         WriteBinaryFile(ReplaceExtension(app_file_name, "cci"), ncsd.GetBuffer(), ncsd.GetSize());
 
     } else {
-        printf("ERROR: Unsupported input file type!");
+        std::cerr << "ERROR: Unsupported input file type!";
         return 1;
     }
 
