@@ -18,11 +18,11 @@ after_build:
   - ps: >
         if (!"$env:APPVEYOR_PULL_REQUEST_TITLE" -and ("$env:APPVEYOR_REPO_BRANCH" -eq "master"))
           {
-            $BUILD_NAME_UNCUT = git show -s --pretty=format:%h-%f | Out-String
-            $BUILD_NAME = $BUILD_NAME_UNCUT.Substring(0, [System.Math]::Min(100, $BUILD_NAME_UNCUT.Length)) -replace "`n|`r",""
+            $BUILD_NAME_UNCUT = git show -s --pretty=format:%h-%f.7z | Out-String
+            $BUILD_NAME = $BUILD_NAME_UNCUT.Substring(0, [System.Math]::Min(111, $BUILD_NAME_UNCUT.Length)) -replace "`n|`r",""
             7z a $BUILD_NAME .\build\release\xorer.exe
             Invoke-WebRequest "http://hivelocity.dl.sourceforge.net/project/winscp/WinSCP/5.7/winscp570.zip" -OutFile "winscp570.zip"
             7z e -y winscp570.zip
-            .\WinSCP.com /command "option batch abort" "option confirm off" "open sftp://builds:${env:BUILD_PASSWORD}@archshift.com -hostkey=*" "put ${BUILD_NAME}.7z /xorer/nightly/windows/" "exit"
+            .\WinSCP.com /command "option batch abort" "option confirm off" "open sftp://builds:${env:BUILD_PASSWORD}@archshift.com -hostkey=*" "put $BUILD_NAME /xorer/nightly/windows/" "exit"
           }
 
