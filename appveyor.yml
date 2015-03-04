@@ -20,5 +20,5 @@ after_build:
   - ps: 7z a $BUILD_NAME .\build\release\xorer.exe
   - ps: Invoke-WebRequest "http://hivelocity.dl.sourceforge.net/project/winscp/WinSCP/5.7/winscp570.zip" -OutFile "winscp570.zip" 
   - ps: 7z e -y winscp570.zip
-  - ps: .\WinSCP.com /command "option batch abort" "option confirm off" "open sftp://builds:${env:BUILD_PASSWORD}@archshift.com -hostkey=*" "put $BUILD_NAME /xorer/nightly/windows/" "exit"
+  - ps: .\WinSCP.com /command "option batch abort" "option confirm off" "open sftp://builds:${env:BUILD_PASSWORD}@archshift.com -hostkey=*" "put ${BUILD_NAME}.7z /xorer/nightly/windows/" "exit"
 
