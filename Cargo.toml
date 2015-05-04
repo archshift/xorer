@@ -4,5 +4,7 @@ version = "0.1.0"
 authors = ["archshift <gh@archshift.com>"]
 
 [dependencies]
-getopts = "0.2.10"
-rust-crypto = "0.2.31"
+getopts = "*"
+
+[dependencies.rust-crypto]
+path = "crypto"

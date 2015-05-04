@@ -6,7 +6,6 @@ use std::io::{Read, Seek, SeekFrom};
 
 use crypto::digest::Digest;
 use crypto::sha2::Sha256;
-use crypto::util;
 
 pub fn verify_hash(file: &mut File, offset: u64, region_size: usize, hash: &[u8]) -> Result<bool, io::Error>
 {
@@ -29,7 +28,17 @@ pub fn verify_hash(file: &mut File, offset: u64, region_size: usize, hash: &[u8]
 	hasher.result(&mut comp_hash);
 	hasher.reset();
 
-	Ok(util::fixed_time_eq(&comp_hash, hash))
+	Ok(is_buf_same(&comp_hash, hash))
+}
+
+pub fn is_buf_zeroed(t: &[u8]) -> bool
+{
+	for i in 0..t.len() {
+		if t[i] != 0 {
+			return false;
+		}
+	}
+	return true;
 }
 
 pub fn is_zeroed<T>(t: &T) -> bool
@@ -38,10 +47,36 @@ pub fn is_zeroed<T>(t: &T) -> bool
 	let t_ptr: *const u8 = t_ptr as *const u8;
 	
     let slice = unsafe { slice::from_raw_parts(t_ptr, mem::size_of::<T>()) };
-    for i in 0..slice.len() {
-		if slice[i] != 0 {
+    return is_buf_zeroed(&slice);
+}
+
+pub fn is_buf_same(t: &[u8], r: &[u8]) -> bool
+{
+	if t.len() != r.len() {
+		return false;
+	}
+
+	for i in 0..t.len() {
+		if t[i] != r[i] {
 			return false;
 		}
 	}
 	return true;
+}
+
+pub fn is_same<T, R>(t: &T, r: &R) -> bool
+{
+	if mem::size_of::<T>() != mem::size_of::<R>() {
+		return false;
+	}
+
+	let t_ptr: *const T = t;
+	let t_ptr: *const u8 = t_ptr as *const u8;
+	let r_ptr: *const R = r;
+	let r_ptr: *const u8 = r_ptr as *const u8;
+	
+    let slice_t = unsafe { slice::from_raw_parts(t_ptr, mem::size_of::<T>()) };
+    let slice_r = unsafe { slice::from_raw_parts(r_ptr, mem::size_of::<R>()) };
+
+    return is_buf_same(&slice_t, &slice_r);
 }

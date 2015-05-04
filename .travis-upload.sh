@@ -18,5 +18,5 @@ if [ "$TRAVIS_BRANCH" = "master" ]; then
     cp target/release/xorer "$REV_NAME"
     ARCHIVE_NAME="${REV_NAME}.tar.xz"
     tar -cJvf "$ARCHIVE_NAME" "$REV_NAME"
-    lftp -c "open -u builds,$BUILD_PASSWORD sftp://builds.archshift.org; put -O '$UPLOAD_DIR' '$ARCHIVE_NAME'"
+    lftp -c "open -u builds,$BUILD_PASSWORD sftp://builds.archshift.com; put -O '$UPLOAD_DIR' '$ARCHIVE_NAME'"
 fi

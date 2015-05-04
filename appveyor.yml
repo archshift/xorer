@@ -1,5 +1,5 @@
 platform:
-  - x86
+  - x64
 
 configuration:
   - Release
@@ -9,9 +9,9 @@ environment:
     secure: 1R+NBu9p3KStaLaxGoc9xw==
   RUST_INSTALL_DIR: C:\Rust
   matrix:
-#    - RUST_INSTALL_TRIPLE: i686-pc-windows-gnu
+#    - RUST_INSTALL_TRIPLE: x86_64-pc-windows-gnu
 #      RUST_VERSION: nightly
-    - RUST_INSTALL_TRIPLE: i686-pc-windows-gnu
+    - RUST_INSTALL_TRIPLE: x86_64-pc-windows-gnu
       RUST_VERSION: 1.0.0-beta
 
 install:
@@ -22,7 +22,6 @@ install:
   - cargo --version
 
 build_script:
-  - PATH %PATH%;C:\MinGW\bin;
   - cargo build --release
 
 after_build:
@@ -45,6 +44,6 @@ after_build:
                 "option batch abort" `
                 "option confirm off" `
                 "open sftp://builds:${env:BUILD_PASSWORD}@builds.archshift.com -hostkey=*" `
-                "put $BUILD_NAME /xorer/nightly/windows/" `
+                "put $BUILD_NAME /xorer/nightly/windows-amd64/" `
                 "exit"
           }
