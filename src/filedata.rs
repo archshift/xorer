@@ -19,12 +19,6 @@ pub fn get_data<T: Clone>(file: &mut File, off: u64) -> Result<T, io::Error>
         };
 	}
 
-	// Ugly way to create a type without initializing it,
-	// then copy the buffer into its memory.
-	let mut ntype = Vec::<T>::with_capacity(1);
-	unsafe { 
-		ntype.set_len(1);
-		ptr::copy(buf.as_ptr(), ntype.as_mut_ptr() as *mut u8, mem::size_of::<T>());
-	};
-	Ok(ntype[0].clone())
+	let ntype: &T = unsafe { mem::transmute(buf.as_ptr()) };
+	Ok(ntype.clone())
 }
