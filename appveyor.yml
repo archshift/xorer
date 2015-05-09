@@ -31,7 +31,7 @@ after_build:
             $GITDATE = $(git show -s --date=short --format='%ad') -replace "-",""
             $GITREV = $(git show -s --format='%h')
             # Where are these spaces coming from? Regardless, let's remove them
-            $BUILD_NAME = "citra-${GITDATE}-${GITREV}-windows.7z" -replace " ",""
+            $BUILD_NAME = "xorer-${GITDATE}-${GITREV}-windows.7z" -replace " ",""
             # Zip up the build folder
             7z a $BUILD_NAME .\target\release\xorer.exe
             
