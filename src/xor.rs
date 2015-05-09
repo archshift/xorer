@@ -3,7 +3,7 @@ use std::cmp;
 use std::io;
 use std::io::{Read, Write, Seek, SeekFrom};
 
-static BUF_SIZE: usize = 1024 * 1024;
+static BUF_SIZE: usize = 4 * 1024 * 1024;
 
 pub enum Error {
     IO(io::Error),
