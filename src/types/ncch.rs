@@ -157,11 +157,6 @@ impl EXEFS {
 			hashes:  try!(filedata::get_data::<[FileHash; 10]>(file, offset + 0xC0)),
 		};
 
-		for i in 0..exefs.headers.len() {
-			exefs.headers[i].file_off *= 0x200;
-			exefs.headers[i].file_size *= 0x200;
-		}
-
 		return Ok(exefs);
 	}
 
