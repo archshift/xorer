@@ -2,8 +2,6 @@ use std::fs::File;
 use std::io;
 use std::io::{Read, Seek, SeekFrom};
 use std::mem;
-use std::ptr;
-use std::vec::Vec;
 
 pub fn get_data<T: Clone>(file: &mut File, off: u64) -> Result<T, io::Error>
 {

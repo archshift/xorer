@@ -152,7 +152,7 @@ pub struct EXEFS {
 impl EXEFS {
 	pub fn new(file: &mut File, offset: u64) -> Result<EXEFS, io::Error>
 	{
-		let mut exefs = EXEFS {
+		let exefs = EXEFS {
 			headers: try!(filedata::get_data::<[FileHeader; 10]>(file, offset + 0)),
 			hashes:  try!(filedata::get_data::<[FileHash; 10]>(file, offset + 0xC0)),
 		};
