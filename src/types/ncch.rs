@@ -73,7 +73,7 @@ impl NCCH {
 	{
 		try!(xor::xor_file(ncch_file, pad, ncch_file_pos + 0x200, 0, 0x800));
 
-		Ok(try!(verify::verify_hash(ncch_file, ncch_file_pos + 0x200, 0x400, 
+		Ok(try!(verify::verify_hash(ncch_file, ncch_file_pos + 0x200, 0x400,
 			&self.exheader_hash)))
 	}
 
@@ -82,12 +82,12 @@ impl NCCH {
 	{
 		let exefs_pos = ncch_file_pos + self.exefs_offset;
 		try!(xor::xor_file(ncch_file, pad, exefs_pos, 0, self.exefs_size));
-		
-		Ok(try!(verify::verify_hash(ncch_file, exefs_pos, 
+
+		Ok(try!(verify::verify_hash(ncch_file, exefs_pos,
 			self.exefs_hash_region_size as usize, &self.exefs_hash)))
 	}
 
-	pub fn decrypt_exefs7x(&self, ncch_file: &mut File, pad: &mut File, pad_7x: &mut File, 
+	pub fn decrypt_exefs7x(&self, ncch_file: &mut File, pad: &mut File, pad_7x: &mut File,
 		ncch_file_pos: u64) -> Result<bool, xor::Error>
 	{
 		let exefs_pos = ncch_file_pos + self.exefs_offset;
@@ -117,8 +117,8 @@ impl NCCH {
 	    let sect_size:  u64 = self.exefs_size - code_end_off;
     	try!(xor::xor_file(ncch_file, pad, exefs_pos + sect_start, sect_start, sect_size));
 
-		Ok(try!(verify::verify_hash(ncch_file, exefs_pos, 
-				self.exefs_hash_region_size as usize, &self.exefs_hash)) 
+		Ok(try!(verify::verify_hash(ncch_file, exefs_pos,
+				self.exefs_hash_region_size as usize, &self.exefs_hash))
 			&& try!(exefs.verify_hashes(ncch_file, exefs_pos)))
 	}
 
@@ -127,8 +127,8 @@ impl NCCH {
 	{
 		let romfs_pos = ncch_file_pos + self.romfs_offset;
 		try!(xor::xor_file(ncch_file, pad, romfs_pos, 0, self.romfs_size));
-		
-		Ok(try!(verify::verify_hash(ncch_file, romfs_pos, 
+
+		Ok(try!(verify::verify_hash(ncch_file, romfs_pos,
 			self.romfs_hash_region_size as usize, &self.romfs_hash)))
 	}
 }
@@ -177,17 +177,17 @@ impl EXEFS {
 	pub fn verify_hashes(&self, file: &mut File, exefs_offset: u64) -> Result<bool, io::Error>
 	{
 
-		for i in 0..10 {            
+		for i in 0..10 {
             // If the header and the hash are both zero-initialized, there's no code to verify
             if verify::is_zeroed(&self.headers[i]) && verify::is_zeroed(&self.hashes[9-i]) {
                 return Ok(true);
             }
 
             // For some reason, the hashes are in reverse order...
-            if !try!(verify::verify_hash(file, exefs_offset + 0x200 + self.headers[i].file_off as u64, 
+            if !try!(verify::verify_hash(file, exefs_offset + 0x200 + self.headers[i].file_off as u64,
 				self.headers[i].file_size as usize, &self.hashes[9-i])) {
             	return Ok(false);
-            } 
+            }
         }
         Ok(true)
 	}

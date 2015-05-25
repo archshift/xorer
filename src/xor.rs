@@ -51,7 +51,7 @@ pub fn xor_file(file: &mut File, pad: &mut File,
         if read_size == 0 {
             break;
         }
-        
+
         let mut file_buf: Vec<u8> = vec![0;read_size];
         let mut pad_buf: Vec<u8> = vec![0;read_size];
 
