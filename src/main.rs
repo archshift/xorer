@@ -160,7 +160,7 @@ fn main()
         Ok(args) => args,
         Err(e) => match e {
             cli::Error::ArgAutoexit => return,
-            _ => panic!(),
+            _ => quit!("Could not parse CLI arguments"),
         },
     };
 
@@ -187,7 +187,7 @@ fn main()
         // Otherwise, will use the current contents.
         if fs::metadata(&filename).is_err() {
             if fs::copy(&args.free[0], &filename).is_err() {
-                panic!();
+                quit!("Could not copy input file");
             }
         }
     }
@@ -211,7 +211,12 @@ fn main()
         }
     } else {
         match decrypt_file(&mut file, &args) {
-            Err(e) => panic!(e),
+            Err(e) => match e {
+                Error::IO(_) => quit!("Filesystem IO failed"),
+                Error::XOR(_) => quit!("XORing files failed"),
+                Error::HashFailure => quit!("Decryption failed - hash mismatch"),
+                _ => panic!(e),
+            },
             _ => (),
         }
     }
