@@ -8,6 +8,7 @@ mod types;
 mod verify;
 
 use std::io;
+use std::io::{Read, Write, Seek, SeekFrom};
 use std::fs;
 use std::fs::{File,OpenOptions};
 use std::str;
@@ -94,6 +95,14 @@ fn decrypt_ncch(ncch: &ncch::NCCH, file: &mut File, file_off: u64, matches: &get
         ncch::ContainerType::CXI => try!(decrypt_cxi(ncch, file, file_off, matches)),
         ncch::ContainerType::CFA => try!(decrypt_cfa(ncch, file, file_off, matches)),
     };
+
+    try!(file.seek(SeekFrom::Start(file_off + 0x18F)));
+    let mut byte_buf: Vec<u8> = vec![0;1];
+    try!(file.read(&mut byte_buf));
+
+    byte_buf[0] |= 0x04;
+    try!(file.seek(SeekFrom::Start(file_off + 0x18F)));
+    try!(file.write(&mut byte_buf));
 
     Ok(())
 }
