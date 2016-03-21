@@ -156,16 +156,13 @@ macro_rules! quit {
 
 fn main()
 {
-    let optsargs = match cli::parse_args() {
+    let (opts, args) = match cli::parse_args() {
         Ok(args) => args,
         Err(e) => match e {
             cli::Error::ArgAutoexit => return,
             _ => quit!("Could not parse CLI arguments"),
         },
     };
-
-    let opts = optsargs.0;
-    let args = optsargs.1;
 
     if args.free.is_empty() {
         cli::display_help_info(&opts);
@@ -206,18 +203,19 @@ fn main()
             Ok(in_file) => in_file,
             Err(_) => quit!("Failed to open input pad!"),
         };
-        if padxor_dumb(&mut file, &mut pad_file, &args).is_err() {
-            panic!();
-        }
-    } else {
-        match decrypt_file(&mut file, &args) {
-            Err(e) => match e {
+        if let Err(e) = padxor_dumb(&mut file, &mut pad_file, &args) {
+            match e {
                 Error::IO(_) => quit!("Filesystem IO failed"),
                 Error::XOR(_) => quit!("XORing files failed"),
-                Error::HashFailure => quit!("Decryption failed - hash mismatch"),
-                _ => panic!(e),
-            },
-            _ => (),
+                e @ _ => panic!(e),
+            }
+        }
+    } else if let Err(e) = decrypt_file(&mut file, &args) {
+        match e {
+            Error::IO(_) => quit!("Filesystem IO failed"),
+            Error::XOR(_) => quit!("XORing files failed"),
+            Error::HashFailure => quit!("Decryption failed - hash mismatch"),
+            _ => panic!(e),
         }
     }
 }

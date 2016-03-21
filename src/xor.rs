@@ -3,7 +3,7 @@ use std::cmp;
 use std::io;
 use std::io::{Read, Write, Seek, SeekFrom};
 
-static BUF_SIZE: usize = 4 * 1024 * 1024;
+const BUF_SIZE: usize = 128 * 1024;
 
 pub enum Error {
     IO(io::Error),
@@ -45,6 +45,9 @@ pub fn xor_file(file: &mut File, pad: &mut File,
     try!(file.seek(SeekFrom::Start(file_pos)));
     try!(pad.seek(SeekFrom::Start(pad_pos)));
 
+    let mut file_buf = [0u8; BUF_SIZE];
+    let mut pad_buf = [0u8; BUF_SIZE];
+
     let mut total_read_size: u64 = 0;
     loop {
         let read_size: usize = cmp::min((size - total_read_size) as usize, BUF_SIZE);
@@ -52,26 +55,8 @@ pub fn xor_file(file: &mut File, pad: &mut File,
             break;
         }
 
-        let mut file_buf: Vec<u8> = vec![0;read_size];
-        let mut pad_buf: Vec<u8> = vec![0;read_size];
-
-        // TODO: use file.read_all() once that's standardized
-        let mut bytes_read = 0;
-        while bytes_read < file_buf.len() {
-            match file.read(&mut file_buf[bytes_read..]) {
-                Ok(n) => bytes_read += n,
-                Err(e) => return Err(Error::from(e)),
-            };
-        }
-
-        // TODO: use file.read_all() once that's standardized
-        let mut bytes_read = 0;
-        while bytes_read < pad_buf.len() {
-            match pad.read(&mut pad_buf[bytes_read..]) {
-                Ok(n) => bytes_read += n,
-                Err(e) => return Err(Error::from(e)),
-            };
-        }
+        try!(file.read_exact(&mut file_buf[0..read_size]));
+        try!(pad.read_exact(&mut pad_buf[0..read_size]));
 
         // file.read() seeks automatically, so let's return to the write position
         try!(file.seek(SeekFrom::Start(file_pos + total_read_size)));

@@ -2,21 +2,16 @@ use std::fs::File;
 use std::io;
 use std::io::{Read, Seek, SeekFrom};
 use std::mem;
+use std::slice;
 
-pub fn get_data<T: Clone>(file: &mut File, off: u64) -> Result<T, io::Error>
+pub fn get_data<T: Copy>(file: &mut File, off: u64) -> Result<T, io::Error>
 {
-	let mut bytes_read = 0;
-	let mut buf = vec![0;mem::size_of::<T>()];
+    unsafe {
+        let mut t: T = mem::zeroed();
+        let t_bytes = slice::from_raw_parts_mut((&mut t as *mut T) as *mut u8, mem::size_of::<T>());
+        try!(file.seek(SeekFrom::Start(off)));
+        try!(file.read_exact(t_bytes));
 
-	try!(file.seek(SeekFrom::Start(off)));
-
-	while bytes_read < buf.len() {
-		match file.read(&mut buf[bytes_read..]) {
-            Ok(n) => bytes_read += n,
-            Err(e) => return Err(e),
-        };
-	}
-
-	let ntype: &T = unsafe { mem::transmute(buf.as_ptr()) };
-	Ok(ntype.clone())
+        Ok(t)
+    }
 }
