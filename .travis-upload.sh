@@ -3,12 +3,12 @@ if [ "$TRAVIS_BRANCH" = "master" ]; then
     GITREV="`git show -s --format='%h'`"
 
     if [ "$TRAVIS_OS_NAME" = "linux" -o -z "$TRAVIS_OS_NAME" ]; then
-        REV_NAME="citra-${GITDATE}-${GITREV}-linux-amd64"
+        REV_NAME="xorer-${GITDATE}-${GITREV}-linux-amd64"
         UPLOAD_DIR="/xorer/nightly/linux-amd64"
 
         sudo apt-get -qq install lftp
     elif [ "$TRAVIS_OS_NAME" = "osx" ]; then
-        REV_NAME="citra-${GITDATE}-${GITREV}-osx-amd64"
+        REV_NAME="xorer-${GITDATE}-${GITREV}-osx-amd64"
         UPLOAD_DIR="/xorer/nightly/osx-amd64"
 
         brew install lftp
